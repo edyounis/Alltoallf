@@ -5,9 +5,9 @@
 
 #include "alltoallf.h"
 
-#define BUFFER_SIZE 40000 // TODO make command line argument
-#define NUM_DATA    5000 // TODO make command line argument
-#define NUM_ITERS   1000 // TODO "" ""
+#define BUFFER_SIZE 400000 // TODO make command line argument
+#define NUM_DATA    50000 // TODO make command line argument
+#define NUM_ITERS   100 // TODO "" ""
 
 double read_timer ( void )
 {
@@ -28,9 +28,19 @@ int filter ( uint64_t rank, uint64_t* data )
 	return *data == rank;
 }
 
+uint64_t filter2 ( uint64_t* data )
+{
+	return *data;
+}
+
 int filter_invert ( uint64_t rank, uint64_t* data )
 {
 	return *data == rank + 2;
+}
+
+uint64_t filter2_invert ( uint64_t* data )
+{
+	return lrand48();
 }
 
 int main ( int argc, char** argv )
@@ -57,8 +67,8 @@ int main ( int argc, char** argv )
 
 	for ( uint32_t i = 0; i < NUM_ITERS; ++i )
 	{
-		alltoallf( data, &data_count, BUFFER_SIZE, buff, BUFFER_SIZE, &filter, rank, nproc );
-		alltoallf( data, &data_count, BUFFER_SIZE, buff, BUFFER_SIZE, &filter_invert, rank, nproc );
+		alltoallf( data, &data_count, BUFFER_SIZE, buff, BUFFER_SIZE, &filter2, rank, nproc );
+		alltoallf( data, &data_count, BUFFER_SIZE, buff, BUFFER_SIZE, &filter2_invert, rank, nproc );
 	}
 
 	simulation_time = read_timer( ) - simulation_time;

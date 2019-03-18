@@ -49,7 +49,8 @@ int alltoallf
 (
 	uint64_t* data, uint64_t* data_count, uint64_t data_size,	// Send/Recv Data Buffer
 	uint64_t* buffer, uint64_t buffer_size,						// Extra Buffer
-	int (*filter)( uint64_t, uint64_t* ),						// Filter function
+//	int (*filter)( uint64_t, uint64_t* ),						// Filter function
+	uint64_t (*filter)( uint64_t* ),						// Filter function
 	uint64_t rank, uint64_t nproc								// Process Information
 )
 {
@@ -76,50 +77,63 @@ int alltoallf
 		//	printf("Rank: %d Data_count: %lld\n", rank, *data_count );
 			for ( uint64_t data_index = 0; data_index < *data_count; ++data_index )
 			{
-				uint8_t accounted_for = 0; // Bit field
+				uint64_t process_index = (*filter)( data + data_index ) % nproc;
 
-				for ( uint64_t process_index = 0; process_index < nproc && accounted_for != 0b11; ++process_index )
-				{
-					//printf( "Rank: %d, Filter_Value: %d\n", rank, (*filter)( process_index, data + data_index ) );
-					if ( (*filter)( process_index, data + data_index ) )
-					{
-		//printf("Rank: %d, Data_Count: %lld, NMINE: %lld, NPRTN: %lld\n", rank, *data_count, nmine, nprtn );
-						if ( ( accounted_for & 0b10 ) == 0 && (process_index >> i) % 2 == 0 ) // TODO REMOVE also on left side
-						{
-							accounted_for |= 0b10;
-							data[ nmine++ ] = data[ data_index ];
-						}
-						if ( ( accounted_for & 0b01 ) == 0 && (process_index >> i) % 2 == 1 )
-						{
-							accounted_for |= 0b01;
-							buffer[ nprtn++ ] = data[ data_index ];
-						}
-					}
-				}
+				if ( (process_index >> i) % 2 == 0 )
+					data[ nmine++ ] = data[ data_index ];
+				else
+					buffer[ nprtn++ ] = data[ data_index ];
+
+		// 		uint8_t accounted_for = 0; // Bit field
+
+		// 		for ( uint64_t process_index = 0; process_index < nproc && accounted_for != 0b11; ++process_index )
+		// 		{
+		// 			//printf( "Rank: %d, Filter_Value: %d\n", rank, (*filter)( process_index, data + data_index ) );
+		// 			if ( (*filter)( process_index, data + data_index ) )
+		// 			{
+		// //printf("Rank: %d, Data_Count: %lld, NMINE: %lld, NPRTN: %lld\n", rank, *data_count, nmine, nprtn );
+		// 				if ( ( accounted_for & 0b10 ) == 0 && (process_index >> i) % 2 == 0 ) // TODO REMOVE also on left side
+		// 				{
+		// 					accounted_for |= 0b10;
+		// 					data[ nmine++ ] = data[ data_index ];
+		// 				}
+		// 				if ( ( accounted_for & 0b01 ) == 0 && (process_index >> i) % 2 == 1 )
+		// 				{
+		// 					accounted_for |= 0b01;
+		// 					buffer[ nprtn++ ] = data[ data_index ];
+		// 				}
+		// 			}
+		// 		}
 			}
 		}
 		else	// TODO REMOVE on right side
 		{
 			for ( uint64_t data_index = 0; data_index < *data_count; ++data_index )
 			{
-				uint8_t accounted_for = 0; // Bit field
+				uint64_t process_index = (*filter)( data + data_index ) % nproc;
 
-				for ( uint64_t process_index = 0; process_index < nproc && accounted_for != 0b11; ++process_index )
-				{
-					if ( (*filter)( process_index, data + data_index ) )
-					{
-						if ( ( accounted_for & 0b10 ) == 0 && (process_index >> i) % 2 == 0 ) // TODO REMOVE on left side
-						{
-							accounted_for |= 0b10;
-							buffer[ nprtn++ ] = data[ data_index ];
-						}
-						if ( ( accounted_for & 0b01 ) == 0 && (process_index >> i) % 2 == 1 )
-						{
-							accounted_for |= 0b01;
-							data[ nmine++ ] = data[ data_index ];
-						}
-					}
-				}
+				if ( (process_index >> i) % 2 == 0 )
+					buffer[ nprtn++ ] = data[ data_index ];
+				else
+					data[ nmine++ ] = data[ data_index ];
+				// uint8_t accounted_for = 0; // Bit field
+
+				// for ( uint64_t process_index = 0; process_index < nproc && accounted_for != 0b11; ++process_index )
+				// {
+				// 	if ( (*filter)( process_index, data + data_index ) )
+				// 	{
+				// 		if ( ( accounted_for & 0b10 ) == 0 && (process_index >> i) % 2 == 0 ) // TODO REMOVE on left side
+				// 		{
+				// 			accounted_for |= 0b10;
+				// 			buffer[ nprtn++ ] = data[ data_index ];
+				// 		}
+				// 		if ( ( accounted_for & 0b01 ) == 0 && (process_index >> i) % 2 == 1 )
+				// 		{
+				// 			accounted_for |= 0b01;
+				// 			data[ nmine++ ] = data[ data_index ];
+				// 		}
+				// 	}
+				// }
 			}
 		}
 
